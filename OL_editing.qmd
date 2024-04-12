@@ -4,7 +4,7 @@ format: html
 ---
 
 ```{r}
-setwd("C:/Users/ricky/Desktop/Masters/Pipeline/latest")
+# setwd("C:/Users/ricky/Desktop/Masters/Pipeline/latest/O_Rubescens_editing/")
 ```
 
 ```{r}
