@@ -1,0 +1,576 @@
+---
+title: "Optic Lobe RNA Edits"
+format: html
+---
+
+```{r}
+setwd("C:/Users/ricky/Desktop/Masters/Pipeline/latest")
+```
+
+```{r}
+library(UniprotR)
+library(xlsx)
+library(ape)
+library(Biostrings)
+library(insect)
+```
+
+
+
+```{r}
+ses=read.csv("ses_profile.csv")
+wes=read.csv("wes_profile.csv")
+```
+
+```{r}
+edits.raw=rbind(ses,wes)
+
+```
+
+
+
+```{r}
+colnames(edits.raw)[1:35]=c("orf","pos","mrna_con","gdna_reads","gdna_con","octo10_A","octo10_C","octo10_G","octo10_T","octo10_tot",
+                  "octo4_A","octo4_C","octo4_G","octo4_T","octo4_tot","octo6_A","octo6_C","octo6_G","octo6_T","octo6_tot",
+                  "octo7_A","octo7_C","octo7_G","octo7_T","octo7_tot","octo8_A","octo8_C","octo8_G","octo8_T","octo8_tot",
+                  "octo9_A","octo9_C","octo9_G","octo9_T","octo9_tot")
+```
+
+
+
+restricting the data to only bases for which there is mRNA coverage for all 6 octopuses.
+```{r Trimming data}
+edits=edits.raw[edits.raw$octo10_tot>0&edits.raw$octo4_tot>0&edits.raw$octo6_tot>0&edits.raw$octo7_tot>0&edits.raw$octo8_tot>0&edits.raw$octo9_tot>0,]
+```
+
+
+
+# Finding the actual edited base
+None of the fields that are currently in the dataset actually give what the base edited to for the weak editing sites.  For the strong edits you can gather this data from the mrna_cons field, but for the weak edits this field will match the gdna_cons field and not represent what the base was changed to.  This bit of code is intended to give what is the most common mRNA base that does not match the gDNA.
+```{r}
+## Making field for edited based ####
+edits$A=edits$octo10_A+edits$octo4_A+edits$octo6_A+edits$octo7_A+edits$octo8_A+edits$octo9_A
+edits$C=edits$octo10_C+edits$octo4_C+edits$octo6_C+edits$octo7_C+edits$octo8_C+edits$octo9_C
+edits$G=edits$octo10_G+edits$octo4_G+edits$octo6_G+edits$octo7_G+edits$octo8_G+edits$octo9_G
+edits$T=edits$octo10_T+edits$octo4_T+edits$octo6_T+edits$octo7_T+edits$octo8_T+edits$octo9_T
+
+
+edits$edited=NA
+base.edit=apply(edits[edits$gdna_con=="A",44:46],1,FUN="which.max")
+base.edit[base.edit==1]="C"
+base.edit[base.edit==2]="G"
+base.edit[base.edit==3]="T"
+edits$edited[edits$gdna_con=="A"]=base.edit
+
+
+base.edit=apply(edits[edits$gdna_con=="C",c(43,45,46)],1,FUN="which.max")
+base.edit[base.edit==1]="A"
+base.edit[base.edit==2]="G"
+base.edit[base.edit==3]="T"
+edits$edited[edits$gdna_con=="C"]=base.edit
+
+base.edit=apply(edits[edits$gdna_con=="G",c(43,44,46)],1,FUN="which.max")
+base.edit[base.edit==1]="A"
+base.edit[base.edit==2]="C"
+base.edit[base.edit==3]="T"
+edits$edited[edits$gdna_con=="G"]=base.edit
+
+base.edit=apply(edits[edits$gdna_con=="T",c(43,44,45)],1,FUN="which.max")
+base.edit[base.edit==1]="A"
+base.edit[base.edit==2]="C"
+base.edit[base.edit==3]="G"
+edits$edited[edits$gdna_con=="T"]=base.edit
+```
+
+
+Filtering our 0 edits
+```{r}
+edits$edited_reads=0
+edits$edited_reads[edits$edited=="A"]=edits$A[edits$edited=="A"]
+edits$edited_reads[edits$edited=="T"]=edits$T[edits$edited=="T"]
+edits$edited_reads[edits$edited=="G"]=edits$G[edits$edited=="G"]
+edits$edited_reads[edits$edited=="C"]=edits$C[edits$edited=="C"]
+edits=edits[edits$edited_reads>0,]
+```
+
+
+# Differential editing significant testing
+
+Calculation of editing percentages for each octopus
+```{r Calculating editing percentages}
+
+edits$octo10_per=0
+edits$octo4_per=0
+edits$octo6_per=0
+edits$octo7_per=0
+edits$octo8_per=0
+edits$octo9_per=0
+
+bases=c("A","C","G","T")
+
+start.per.columns=which(colnames(edits)=="octo10_per")
+spc=start.per.columns
+
+for (j in 0:5){
+  for (i in 0:3){
+    per.column=start.per.columns+j
+    base.column=(5*j)+6+i
+    tot.column=10+5*j
+    #This next line I used to troubleshoot.  Can keep commented out unless troubleshooting.
+    #print(paste("Result Column: ",per.column,", Base Column: ",base.column,", Total Column: ",tot.column,sep=""))
+    edits[edits$gdna_con==bases[i+1],start.per.columns+j]=1-edits[edits$gdna_con==bases[i+1],((5*j)+6+i)]/edits[edits$gdna_con==bases[i+1],10+5*j]
+  }
+}
+```
+
+Now we run the randomization t-test on each base.
+First we calculate the t-stat for all 55k edits.
+```{r T-stat calculation}
+hico2=c(6,7,8)
+loco2=c(4,9,10)
+hico2.col=which(colnames(edits) %in% paste0("octo",hico2,"_per"))
+loco2.col=which(colnames(edits) %in% paste0("octo",loco2,"_per"))
+
+diff=abs(apply(edits[loco2.col],1,mean)-apply(edits[hico2.col],1,mean))
+denom1=apply(edits[loco2.col],1,sd)^2/apply(edits[hico2.col],1,length)
+denom2=apply(edits[loco2.col],1,sd)^2/apply(edits[loco2.col],1,length)
+edits$tstat=diff/sqrt(denom1+denom2)
+```
+
+Next, we make the bank of shuffled editing values. To make this repeatable, I am setting the seed to 56 to help reproducibility.
+```{r Shuffling percentage values}
+set.seed(56)
+
+B=1000000
+
+shuf=cbind(
+  sample(as.matrix(edits[,c(loco2.col,hico2.col)]),B,replace=T),  
+  sample(as.matrix(edits[,c(loco2.col,hico2.col)]),B,replace=T),  
+  sample(as.matrix(edits[,c(loco2.col,hico2.col)]),B,replace=T),  
+  sample(as.matrix(edits[,c(loco2.col,hico2.col)]),B,replace=T),  
+  sample(as.matrix(edits[,c(loco2.col,hico2.col)]),B,replace=T),  
+  sample(as.matrix(edits[,c(loco2.col,hico2.col)]),B,replace=T)
+)
+```
+
+Now we calculate a randomized bank of t-stats from shuffled editing values.
+```{r Random t-stat bank}
+diff.shuf=abs(apply(shuf[,1:3],1,mean)-apply(shuf[,4:6],1,mean))
+denom1.shuf=apply(shuf[,1:3],1,sd)^2/apply(shuf[,1:3],1,length)
+denom2.shuf=apply(shuf[,4:6],1,sd)^2/apply(shuf[,4:6],1,length)
+tstat.shuf=diff.shuf/sqrt(denom1.shuf+denom2.shuf)
+```
+
+
+```{r}
+tstat.shuf=tstat.shuf[tstat.shuf!=Inf]
+tstat.shuf=tstat.shuf[!is.na(tstat.shuf)]
+
+quantile(tstat.shuf,c(0.025,0.975))
+
+
+hist(tstat.shuf[tstat.shuf<5],breaks=100)
+  
+```
+
+Finally, we compare the actual t-stats form the data to the randomization t-stat bank to find how many are more extreme the the actual t-stats, and that is the p-value.
+```{r Finding t-stats}
+edits$pval=0
+
+for (i in 1:nrow(edits)){
+  edits$pval[i]=sum(tstat.shuf>edits$tstat[i],na.rm = T)/length(tstat.shuf)
+  
+}
+```
+
+
+We now have a huge pile of p-values, and suffer from ~330k multiple comparisons.  
+To solve this we can apply a Benjamini & Hochberg false discovery rate correction to the p-values. 
+```{r False discovery rate}
+edits$padj=p.adjust(edits$pval,method="BH")
+edits$pval[is.nan(edits$tstat)]=NA
+edits$padj[is.nan(edits$tstat)]=NA
+```
+
+
+```{r}
+edits.sig=edits[which(!edits$tstat==Inf),]
+edits.sig=edits.sig[edits.sig$padj<=0.01,]
+```
+
+Getting swissprot accession numbers for the transcripts
+```{r}
+swiss=read.table("rubescens_transcriptome_ORF_swissprot_blastx_1bestalignment.csv",header=F)
+colnames(swiss)=c("orf","acc","sumfin_else","i_dont_care","another_thing")
+edits.sig$acc=NA
+i=1
+for (i in 1:nrow(edits.sig)){
+  edits.sig$acc[i]=swiss$acc[swiss$orf==edits$orf[i]]  
+}
+
+
+```
+
+Getting names of swissprot ORFs
+```{r}
+
+edits.sig$protein_name=NA
+
+accessions=unique(edits.sig$acc)
+proteins=as.character()
+
+
+
+for (i in 1:length(accessions)){
+  proteins[i]=GetProteinAnnontate(gsub("(.*)\\.\\d","\\1",accessions[i]),"protein_name")
+  if ((i %% 100)==0){
+    print(i)
+  }
+}
+
+18544
+#edits.sig$protein_name=GetProteinAnnontate(gsub("(.*)\\.\\d","\\1",edits.sig$acc),"protein_name")
+
+
+
+```
+
+
+```{r}
+for (i in 1:nrow(edits.sig)){
+  edits.sig$protein_name[i]=proteins[accessions==edits.sig$acc[i]]
+}
+```
+
+
+Ok, lets see how many significant edits there are at a false discovery rate of 10% or less:
+```{r How many sig}
+sum(edits.sig$padj<=0.05,na.rm = T)
+```
+
+And how many are A to G edits?
+```{r How many A->G sig}
+sum(edits.sig$gdna_con=="A"&edits.sig$edited=="G",na.rm = T)
+```
+
+```{r}
+write.csv(edits.sig,file = "sig_edits.csv")
+```
+
+# Writing significant edits out to file
+We will write out all of the bases that have a false discovery rate of 0.1, or 10%, or less.
+```{r Writing out}
+sig.edits=edits[edits$padj<=0.05,]
+sig.edits=sig.edits[!is.na(sig.edits$padj),]
+write.csv(edits.sig,"Significant_Edits.csv")
+```
+
+
+# Filtering for highest interest sites
+```{r}
+hico2=c(6,7,8)
+loco2=c(4,9,10)
+hico2.col=which(colnames(edits) %in% paste0("octo",hico2,"_per"))
+loco2.col=which(colnames(edits) %in% paste0("octo",loco2,"_per"))
+edits.sig$diff=abs(apply(edits.sig[loco2.col],1,mean)-apply(edits.sig[hico2.col],1,mean))
+
+high.priority=edits.sig[edits.sig$padj<0.005&
+#              edits.sig$edited_reads>30&
+              edits.sig$diff>0.20&
+              edits.sig$genomic_aa!=edits.sig$edited_aa&
+              edits.sig$gdna_con=="A"&
+              edits.sig$edited=="G"&
+              edits.sig$octo10_tot>10&
+              edits.sig$octo4_tot>10&
+              edits.sig$octo6_tot>10&
+              edits.sig$octo7_tot>10&
+              edits.sig$octo8_tot>10&
+              edits.sig$octo9_tot>10&
+              edits.sig$gdna_reads>10,]
+
+write.csv(
+  high.priority,
+  file = "high_priority_edits.csv"
+)
+
+```
+
+
+
+
+# Editing proportions
+```{r}
+edit.per=table(edits$gdna_con,edits$edited)
+edit.bar=c(edit.per[1,c(2,3,4)],edit.per[2,c(1,3,4)],edit.per[3,c(1,2,4)],edit.per[4,c(1,2,3)])
+edit.bar=100*(edit.bar/sum(table(edits$gdna_con,edits$edited)))
+names(edit.bar)=c("A>C","A>G","A>T","C>A","C>G","C>T","G>A","G>C","G>T","T>A","T>C","T>G")
+svg("editing proportions.svg", width = 10, height = 5)
+barplot(edit.bar)
+```
+
+```{r}
+edit.sig.per=table(edits.sig$gdna_con,edits.sig$edited)
+edit.sig.bar=c(edit.sig.per[1,c(2,3,4)],edit.sig.per[2,c(1,3,4)],edit.sig.per[3,c(1,2,4)],edit.sig.per[4,c(1,2,3)])
+edit.sig.bar=100*(edit.sig.bar/sum(table(edits.sig$gdna_con,edits.sig$edited)))
+names(edit.sig.bar)=c("A>C","A>G","A>T","C>A","C>G","C>T","G>A","G>C","G>T","T>A","T>C","T>G")
+svg("editing proportions_sig.svg", width = 10, height = 5)
+barplot(edit.sig.bar)
+```
+
+
+
+## A -> G proportion by the number of mismatches
+
+```{r}
+edits$mismatches=0
+edits$mismatches[edits$gdna_con=="A"]=edits$octo10_C[edits$gdna_con=="A"]+
+  edits$octo10_T[edits$gdna_con=="A"]+edits$octo10_G[edits$gdna_con=="A"]+
+  edits$octo7_C[edits$gdna_con=="A"]+edits$octo7_T[edits$gdna_con=="A"]+
+  edits$octo7_G[edits$gdna_con=="A"]+edits$octo8_C[edits$gdna_con=="A"]+
+  edits$octo8_T[edits$gdna_con=="A"]+edits$octo8_G[edits$gdna_con=="A"]+
+  edits$octo4_C[edits$gdna_con=="A"]+edits$octo4_T[edits$gdna_con=="A"]+
+  edits$octo4_G[edits$gdna_con=="A"]+edits$octo9_C[edits$gdna_con=="A"]+
+  edits$octo9_T[edits$gdna_con=="A"]+edits$octo9_G[edits$gdna_con=="A"]+
+  edits$octo6_C[edits$gdna_con=="A"]+edits$octo6_T[edits$gdna_con=="A"]+
+  edits$octo6_G[edits$gdna_con=="A"]
+
+edits$mismatches[edits$gdna_con=="C"]=edits$octo10_A[edits$gdna_con=="C"]+
+  edits$octo10_T[edits$gdna_con=="C"]+edits$octo10_G[edits$gdna_con=="C"]+
+  edits$octo7_A[edits$gdna_con=="C"]+edits$octo7_T[edits$gdna_con=="C"]+
+  edits$octo7_G[edits$gdna_con=="C"]+edits$octo8_A[edits$gdna_con=="C"]+
+  edits$octo8_T[edits$gdna_con=="C"]+edits$octo8_G[edits$gdna_con=="C"]+
+  edits$octo4_A[edits$gdna_con=="C"]+edits$octo4_T[edits$gdna_con=="C"]+
+  edits$octo4_G[edits$gdna_con=="C"]+edits$octo9_A[edits$gdna_con=="C"]+
+  edits$octo9_T[edits$gdna_con=="C"]+edits$octo9_G[edits$gdna_con=="C"]+
+  edits$octo6_A[edits$gdna_con=="C"]+edits$octo6_T[edits$gdna_con=="C"]+
+  edits$octo6_G[edits$gdna_con=="C"]
+
+edits$mismatches[edits$gdna_con=="G"]=edits$octo10_A[edits$gdna_con=="G"]+
+  edits$octo10_T[edits$gdna_con=="G"]+edits$octo10_C[edits$gdna_con=="G"]+
+  edits$octo7_A[edits$gdna_con=="G"]+edits$octo7_T[edits$gdna_con=="G"]+
+  edits$octo7_C[edits$gdna_con=="G"]+edits$octo8_A[edits$gdna_con=="G"]+
+  edits$octo8_T[edits$gdna_con=="G"]+edits$octo8_C[edits$gdna_con=="G"]+
+  edits$octo4_A[edits$gdna_con=="G"]+edits$octo4_T[edits$gdna_con=="G"]+
+  edits$octo4_C[edits$gdna_con=="G"]+edits$octo9_A[edits$gdna_con=="G"]+
+  edits$octo9_T[edits$gdna_con=="G"]+edits$octo9_C[edits$gdna_con=="G"]+
+  edits$octo6_A[edits$gdna_con=="G"]+edits$octo6_T[edits$gdna_con=="G"]+
+  edits$octo6_C[edits$gdna_con=="G"]
+
+edits$mismatches[edits$gdna_con=="T"]=edits$octo10_A[edits$gdna_con=="T"]+
+  edits$octo10_G[edits$gdna_con=="T"]+edits$octo10_C[edits$gdna_con=="T"]+
+  edits$octo7_A[edits$gdna_con=="T"]+edits$octo7_G[edits$gdna_con=="T"]+
+  edits$octo7_C[edits$gdna_con=="T"]+edits$octo8_A[edits$gdna_con=="T"]+
+  edits$octo8_G[edits$gdna_con=="T"]+edits$octo8_C[edits$gdna_con=="T"]+
+  edits$octo4_A[edits$gdna_con=="T"]+edits$octo4_G[edits$gdna_con=="T"]+
+  edits$octo4_C[edits$gdna_con=="T"]+edits$octo9_A[edits$gdna_con=="T"]+
+  edits$octo9_G[edits$gdna_con=="T"]+edits$octo9_C[edits$gdna_con=="T"]+
+  edits$octo6_A[edits$gdna_con=="T"]+edits$octo6_G[edits$gdna_con=="T"]+
+  edits$octo6_C[edits$gdna_con=="T"]
+
+
+eds.mis=seq(from=0,to=1000,by=10)
+mis.ed=numeric()
+
+for (n in 1:length(eds.mis)){
+  mis.ed[n]=(table(edits$gdna_con[edits$mismatches>=eds.mis[n]],edits$edited[edits$mismatches>=eds.mis[n]])[1,3]/
+                sum(table(edits$gdna_con[edits$mismatches>=eds.mis[n]],edits$edited[edits$mismatches>=eds.mis[n]])))
+}
+
+plot(eds.mis,mis.ed,type="l",ylab="Proportion of A-to-G variants",xlab="Number of mRNA-gDNA mismatches")
+```
+
+
+```{r}
+sum(edits$gdna_con=="A"&edits$edited=="G")
+
+```
+
+```{r}
+sum(edits$padj<0.1,na.rm = T)
+
+sum(edits$padj<0.1&edits$gdna_con=="A"&edits$edited=="G",na.rm = T)
+```
+
+
+# Blasting high priority sequences again
+
+```{r}
+ORF=read.FASTA("rubescens_transcriptome_ORF_ignore_nested.fasta",type="DNA")
+```
+
+Making a fasta file with only the ORFs containing high priority edits
+```{r}
+ORF=read.dna('rubescens_transcriptome_ORF_ignore_nested.fasta', format='fasta')
+write.dna(ORF[gsub("(.*) ORF.*","\\1",labels(ORF)) %in% high.priority$orf],"high_priority.fasta",format="fasta",colsep="")
+
+```
+
+Now, using the blastn bash command to blast the fasta I just made.  
+```{bash}
+blastn -db nt -query high_priority.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_blast_results.txt -remote
+```
+
+
+
+Reading in blast results
+```{r}
+blasted=read.table("high_priority_blast_results.txt",header=F,sep="\t")
+colnames(blasted)=c("query_id","raw_score","bit_score","length","percent_ident","hit")
+blasted=blasted[order(blasted$bit_score,decreasing = T),] #putting them in order of score so best scores come up first
+unique(blasted$query_id)
+```
+
+
+Now I need to take the top hits for each transcript and fill it into the high.priority object
+```{r}
+high.priority$blast=NA
+
+for (i in 1:nrow(high.priority)){
+  if (sum(blasted$query_id==high.priority$orf[12])>0){
+     high.priority$blast[i]=blasted$hit[blasted$query_id==high.priority$orf[i]][1]
+  }
+}
+```
+
+
+```{r}
+write.csv(high.priority,"high_priority_blasted.csv",row.names = F)
+```
+
+
+# Blasting amino acid sequences of high priority edits
+
+```{r}
+# high.priority.aa=trans(ORF[gsub("(.*) ORF.*","\\1",labels(ORF)) %in% high.priority$orf],codonstart = 1)
+# 
+# 
+# write.dna(high.priority.aa[1:11],"high_priority_aa.fasta",format="fasta",colsep="")
+# write.dna(high.priority.aa[1:11],"high_priority_aa1.fasta",format="fasta",colsep="")
+# write.dna(high.priority.aa[12],"high_priority_aa2.fasta",format="fasta",colsep="")
+# 
+# 
+# write.dna(high.priority.aa[23:34],"high_priority_aa3.fasta",format="fasta",colsep="")
+
+```
+
+Now, using the blastn bash command to blast the fasta I just made.  
+```{bash}
+<!-- blastp -db pdb -query high_priority_aa2.fasta -outfmt '6 qseqid score bitscore length pident stitle' -entrez_query "mollusca[ORGN]" -max_target_seqs 5 -max_hsps 1 -out high_priority_aa_blast_results2.txt -remote -->
+
+<!-- blastp -db pdb -query high_priority_aa2.fasta -out high_priority_aa_blast_results2.txt -remote -->
+
+
+
+<!-- blastp -db nr -query high_priority_aa1.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results1.txt -remote -->
+
+<!-- blastp -db nr -query high_priority_aa2.fasta -entrez_query "mollusca[ORGN]" -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results2.txt -remote -->
+
+<!-- blastp -db nr -query high_priority_aa3.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results3.txt -remote -->
+
+```
+
+
+
+```{bash}
+<!-- cat high_priority_aa2.fasta -->
+```
+
+
+
+#
+```{r}
+length(unique(edits.raw$orf))
+```
+
+# Looking to see if zinc fingers show up more than random
+
+
+
+## proportion of zinc finger genes in octopus bimaculoides genome (Albertin et al, 2015)
+```{r}
+1790/33638
+```
+
+## proportion of zinc finger genes in all significantly differentially edited editing sites
+```{r}
+length(grep("z.*n.*finger",edits.sig$protein_name,ignore.case = T))/length(edits.sig$protein_name)
+```
+
+
+## Proportion of zinc finger proteins in high priority edits
+```{r}
+length(grep("z.*n.*finger",high.priority$blast,ignore.case = T))/length(high.priority$blast)
+```
+
+```{r}
+length(proteins)
+length(grep("z.*n.*finger",proteins,ignore.case = T))
+```
+
+
+```{r}
+sum(table(high.priority$orf)>1)
+
+```
+
+
+## Seeing different high priority factors
+```{r}
+zf=edits.sig[
+              edits.sig$padj<0.005
+              &edits.sig$diff>0.20
+              &edits.sig$genomic_aa!=edits.sig$edited_aa
+              &edits.sig$gdna_con=="A"
+              &edits.sig$edited=="G"
+              &edits.sig$octo10_tot>10
+              &edits.sig$octo4_tot>10
+              &edits.sig$octo6_tot>10
+              &edits.sig$octo7_tot>10
+              &edits.sig$octo8_tot>10
+              &edits.sig$octo9_tot>10
+              &edits.sig$gdna_reads>10
+,]$protein_name
+
+length(grep("zinc finger",zf,ignore.case = T))/length(zf)
+
+
+```
+
+
+
+```{r}
+sig.tab = table(edits.sig$protein_name)
+colnames(sig.tab)
+grep()
+```
+
+```{r}
+
+sig.tab=table(edits.sig$protein_name)
+
+sig.tab.labels=rep("Normal",length(sig.tab))
+ 
+sig.tab.labels[grep("z.*n.*finger",names(sig.tab),ignore.case = T)]="Zinc_Finger"
+ 
+boxplot(sig.tab~sig.tab.labels,range=0,log="y")
+ 
+ 
+library(perm)
+ 
+permTS(as.numeric(sig.tab)~sig.tab.labels)
+ 
+```
+
+```{r}
+sum(edits$genomic_aa!=edits$edited_aa) #gives number of recording edits
+```
+
+```{r}
+barplot(table(edits$upstream_base))
+  barplot(table(edits$downstream_base))
+```
+```{r}
+barplot(table(edits.sig$upstream_base))
+  barplot(table(edits.sig$downstream_base))
+```
+
