@@ -6,6 +6,11 @@ format: html
 ```{r}
 # setwd("C:/Users/ricky/Desktop/Masters/Pipeline/latest/O_Rubescens_editing/")
 ```
+```{r}
+#install.packages('BiocManager')
+#BiocManager::install(c("Biostrings","GenomicAlignments"))
+```
+
 
 ```{r}
 library(UniprotR)
@@ -573,4 +578,75 @@ barplot(table(edits$upstream_base))
 barplot(table(edits.sig$upstream_base))
   barplot(table(edits.sig$downstream_base))
 ```
+
+
+
+# Editing levels of synonymous versus non-synonymous edits
+
+```{r}
+hico2=grep("octo10_per|octo4_per|octo9_per",colnames(edits))
+loco2=grep("octo6_per|octo7_per|octo8_per",colnames(edits))
+
+edits$per_hi=apply(edits[,hico2],MARGIN = 1,FUN="mean")
+edits$per_lo=apply(edits[,loco2],MARGIN = 1,FUN="mean")
+```
+
+
+```{r}
+edits$syn="nonsynonymous"
+edits$syn[edits$genomic_aa==edits$edited_aa]="synonymous"
+edits$syn=as.factor(edits$syn)
+edits$syn=relevel(edits$syn,"synonymous")
+```
+
+```{r}
+per.col=grep("per_hi|per_lo",colnames(edits))
+
+hilo=cbind(stack(edits[edits$gdna_con=="A"&edits$edited=="G",per.col]),
+           rep(edits$syn[edits$gdna_con=="A"&edits$edited=="G"],2))
+colnames(hilo)=c("per","co2","syn")
+hilo$co2=as.factor(hilo$co2)
+hilo$syn=as.factor(hilo$syn)
+```
+
+
+```{r}
+syn.wilcox=wilcox.test(edits$per_lo[edits$gdna_con=="A"&edits$edited=="G"&edits$syn=="synonymous"],
+            edits$per_hi[edits$gdna_con=="A"&edits$edited=="G"&edits$syn=="synonymous"],paired=T)
+syn.wilcox
+```
+
+```{r}
+nonsyn.wilcox=wilcox.test(edits$per_lo[edits$gdna_con=="A"&
+                                         edits$edited=="G"&
+                                         edits$syn=="nonsynonymous"],
+            edits$per_hi[edits$gdna_con=="A"&
+                           edits$edited=="G"&
+                           edits$syn=="nonsynonymous"],paired=T)
+nonsyn.wilcox
+```
+
+
+
+
+
+```{r}
+png("high-low.png",width=7,height=4,units="in",res=300,pointsize=7)
+#svg("high-low.svg")
+boxplot(per~co2+syn,data=hilo,range=0,at=c(1.85,1,3.85,3),ylim=c(-0.1,1.3),
+        axes=F,xlab="",ylab="Mismatch level",col=c("white","grey"))
+axis(2,at=seq(from=0,to=1,by=0.2))
+text(mean(c(1,1.85)),-0.1,"Synonymous")
+text(mean(c(3,3.85)),-0.1,"Nonsynonymous")
+legend(x=0.5,y=1.3,pch=22,pt.cex=2.5,
+       legend=c("Low CO2","High CO2"),
+       pt.bg=c("grey","white"),bty="n")
+lines(c(1,1.85),c(1.05,1.05),lwd=2)
+text(mean(c(1,1.85)),1.1,paste("p=",round(syn.wilcox$p.value,11)),cex=1)
+lines(c(3,3.85),c(1.05,1.05),lwd=2)
+text(mean(c(3,3.85)),1.1,paste("p=",round(nonsyn.wilcox$p.value,9)),cex=1)
+dev.off()
+```
+![Editing level in synonymous and nonsynonymous editing sites by CO2 level of the experimental treatment. High CO2 treatments had significantly elevated editing levels in both synonymous and nonsynonymous edits.](high-low.png)
+
 
