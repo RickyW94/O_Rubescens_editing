@@ -565,12 +565,115 @@ permTS(as.numeric(sig.tab)~sig.tab.labels)
 sum(edits$genomic_aa!=edits$edited_aa) #gives number of recording edits
 ```
 
+
 ```{r}
-barplot(table(edits$upstream_base))
-  barplot(table(edits$downstream_base))
+# Assuming 'edits$upstream_base' contains your data
+# Replace 'edits$upstream_base' with your actual data if needed
+
+# Use the table function to get counts
+upstream_counts_all <- table(edits$upstream_base)
+
+# Calculate the sum of all counts
+upstream_total_count <- sum(upstream_counts_all)
+
+# Calculate proportions
+upstream_proportions_all <- upstream_counts_all / upstream_total_count
+
+# Format the proportions
+upstream_formatted_proportions <- formatC(upstream_proportions_all, format = "f", digits = 5)
+
+# Create a data frame with the proportions
+upstream_proportions_df <- data.frame(base = names(upstream_counts_all), count = upstream_counts_all, proportion = upstream_formatted_proportions)
+
+# Print the result
+print(upstream_proportions_df)
+
 ```
 ```{r}
-barplot(table(edits.sig$upstream_base))
-  barplot(table(edits.sig$downstream_base))
+upstream_A_to_G_subset = edits[edits$gdna_con == 'A' & edits$edited == 'G', ]
+
+counts_upstream_A_to_G = table(upstream_A_to_G_subset$upstream_base)
+
+total_count_upstream_A_to_G = sum(counts_upstream_A_to_G)
+
+proportions_upstream_A_to_G = counts_upstream_A_to_G/total_count_upstream_A_to_G
+
+formatted_proportions_upstream_A_to_G = formatC(proportions_upstream_A_to_G, format = "f", digits = 5)
+
+proportions_upstream_A_to_G_df = data.frame(base = names(counts_upstream_A_to_G), count = counts_upstream_A_to_G, proportion = formatted_proportions_upstream_A_to_G)
+
+print(proportions_upstream_A_to_G_df)
 ```
 
+```{r}
+upstream_A_to_G_sig_subset = edits.sig[edits.sig$gdna_con == 'A' & edits.sig$edited == 'G', ]
+
+counts_upstream_A_to_G_sig = table(upstream_A_to_G_sig_subset$upstream_base)
+
+total_count_upstream_A_to_G_sig = sum(counts_upstream_A_to_G_sig)
+
+proportions_upstream_A_to_G_sig = counts_upstream_A_to_G_sig/total_count_upstream_A_to_G_sig
+
+formatted_proportions_upstream_A_to_G_sig = formatC(proportions_upstream_A_to_G_sig, format = "f", digits = 5)
+
+proportions_upstream_A_to_G_sig_df = data.frame(base = names(counts_upstream_A_to_G_sig), count = counts_upstream_A_to_G_sig, proportion = formatted_proportions_upstream_A_to_G_sig)
+
+print(proportions_upstream_A_to_G_sig_df)
+```
+
+
+```{r}
+# Assuming 'edits$downstream_base' contains your data
+# Replace 'edits$downstream_base' with your actual data if needed
+
+# Use the table function to get counts
+downstream_counts_all <- table(edits$downstream_base)
+
+# Calculate the sum of all counts
+downstream_total_count <- sum(downstream_counts_all)
+
+# Calculate proportions
+downstream_proportions_all <- downstream_counts_all / downstream_total_count
+
+# Format the proportions
+downstream_formatted_proportions <- formatC(downstream_proportions_all, format = "f", digits = 5)
+
+# Create a data frame with the proportions
+downstream_proportions_df <- data.frame(base = names(downstream_counts_all), count = downstream_counts_all, proportion = downstream_formatted_proportions)
+
+# Print the result
+print(downstream_proportions_df)
+
+```
+
+```{r}
+downstream_A_to_G_subset = edits[edits$gdna_con == 'A' & edits$edited == 'G', ]
+
+counts_downstream_A_to_G = table(downstream_A_to_G_subset$downstream_base)
+
+total_count_downstream_A_to_G = sum(counts_downstream_A_to_G)
+
+proportions_downstream_A_to_G = counts_downstream_A_to_G/total_count_downstream_A_to_G
+
+formatted_proportions_downstream_A_to_G = formatC(proportions_downstream_A_to_G, format = "f", digits = 5)
+
+proportions_downstream_A_to_G_df = data.frame(base = names(counts_downstream_A_to_G), count = counts_downstream_A_to_G, proportion = formatted_proportions_downstream_A_to_G)
+
+print(proportions_downstream_A_to_G_df)
+```
+
+```{r}
+downstream_A_to_G_sig_subset = edits.sig[edits.sig$gdna_con == 'A' & edits.sig$edited == 'G', ]
+
+counts_downstream_A_to_G_sig = table(downstream_A_to_G_sig_subset$downstream_base)
+
+total_count_downstream_A_to_G_sig = sum(counts_downstream_A_to_G_sig)
+
+proportions_downstream_A_to_G_sig = counts_downstream_A_to_G_sig/total_count_downstream_A_to_G_sig
+
+formatted_proportions_downstream_A_to_G_sig = formatC(proportions_downstream_A_to_G_sig, format = "f", digits = 5)
+
+proportions_downstream_A_to_G_sig_df = data.frame(base = names(counts_downstream_A_to_G_sig), count = counts_downstream_A_to_G_sig, proportion = formatted_proportions_downstream_A_to_G_sig)
+
+print(proportions_downstream_A_to_G_sig_df)
+```
