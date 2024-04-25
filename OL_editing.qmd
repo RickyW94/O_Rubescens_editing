@@ -311,7 +311,10 @@ edit.bar=100*(edit.bar/sum(table(edits$gdna_con,edits$edited)))
 names(edit.bar)=c("A>C","A>G","A>T","C>A","C>G","C>T","G>A","G>C","G>T","T>A","T>C","T>G")
 svg("editing proportions.svg", width = 10, height = 5)
 barplot(edit.bar)
+dev.off()
 ```
+![Editing proportions.](editing proportions.svg )
+
 
 ```{r}
 edit.sig.per=table(edits.sig$gdna_con,edits.sig$edited)
@@ -320,6 +323,7 @@ edit.sig.bar=100*(edit.sig.bar/sum(table(edits.sig$gdna_con,edits.sig$edited)))
 names(edit.sig.bar)=c("A>C","A>G","A>T","C>A","C>G","C>T","G>A","G>C","G>T","T>A","T>C","T>G")
 svg("editing proportions_sig.svg", width = 10, height = 5)
 barplot(edit.sig.bar)
+dev.off()
 ```
 
 
@@ -628,8 +632,6 @@ nonsyn.wilcox
 
 
 
-
-
 ```{r}
 png("high-low.png",width=7,height=4,units="in",res=300,pointsize=7)
 #svg("high-low.svg")
@@ -649,4 +651,119 @@ dev.off()
 ```
 ![Editing level in synonymous and nonsynonymous editing sites by CO2 level of the experimental treatment. High CO2 treatments had significantly elevated editing levels in both synonymous and nonsynonymous edits.](high-low.png)
 
+```{r}
+hist(edits$per_hi[edits$gdna_con=="A"&edits$edited=="G"]-edits$per_lo[edits$gdna_con=="A"&edits$edited=="G"],breaks=100,)
+```
+
+#  Finding for significant edits
+```{r}
+hico2=grep("octo10_per|octo4_per|octo9_per",colnames(edits.sig))
+loco2=grep("octo6_per|octo7_per|octo8_per",colnames(edits.sig))
+
+edits.sig$per_hi=apply(edits.sig[,hico2],MARGIN = 1,FUN="mean")
+edits.sig$per_lo=apply(edits.sig[,loco2],MARGIN = 1,FUN="mean")
+```
+
+
+```{r}
+edits.sig$syn="nonsynonymous"
+edits.sig$syn[edits.sig$genomic_aa==edits.sig$edited_aa]="synonymous"
+edits.sig$syn=as.factor(edits.sig$syn)
+edits.sig$syn=relevel(edits.sig$syn,"synonymous")
+```
+
+```{r}
+per.col=grep("per_hi|per_lo",colnames(edits.sig))
+
+hilo.sig=cbind(stack(edits.sig[edits.sig$gdna_con=="A"&edits.sig$edited=="G",per.col]),
+           rep(edits.sig$syn[edits.sig$gdna_con=="A"&edits.sig$edited=="G"],2))
+colnames(hilo.sig)=c("per","co2","syn")
+hilo.sig$co2=as.factor(hilo.sig$co2)
+hilo.sig$syn=as.factor(hilo.sig$syn)
+```
+
+```{r}
+syn.wilcox.sig=wilcox.test(edits.sig$per_lo[edits.sig$gdna_con=="A"&edits.sig$edited=="G"&edits.sig$syn=="synonymous"],
+            edits.sig$per_hi[edits.sig$gdna_con=="A"&edits.sig$edited=="G"&edits.sig$syn=="synonymous"],paired=T)
+syn.wilcox.sig
+```
+
+```{r}
+nonsyn.wilcox.sig=wilcox.test(edits.sig$per_lo[edits.sig$gdna_con=="A"&
+                                         edits.sig$edited=="G"&
+                                         edits.sig$syn=="nonsynonymous"],
+            edits.sig$per_hi[edits.sig$gdna_con=="A"&
+                           edits.sig$edited=="G"&
+                           edits.sig$syn=="nonsynonymous"],paired=T)
+nonsyn.wilcox.sig
+```
+
+
+```{r}
+png("high-low-sig.png",width=7,height=4,units="in",res=300,pointsize=7)
+#svg("high-low.svg")
+boxplot(per~co2+syn,data=hilo.sig,range=0,at=c(1.85,1,3.85,3),ylim=c(-0.1,1.3),
+        axes=F,xlab="",ylab="Mismatch level",col=c("white","grey"))
+axis(2,at=seq(from=0,to=1,by=0.2))
+text(mean(c(1,1.85)),-0.1,"Synonymous")
+text(mean(c(3,3.85)),-0.1,"Nonsynonymous")
+legend(x=0.5,y=1.3,pch=22,pt.cex=2.5,
+       legend=c("Low CO2","High CO2"),
+       pt.bg=c("grey","white"),bty="n")
+lines(c(1,1.85),c(1.05,1.05),lwd=2)
+text(mean(c(1,1.85)),1.1,paste("p=",round(syn.wilcox.sig$p.value,11)),cex=1)
+lines(c(3,3.85),c(1.05,1.05),lwd=2)
+text(mean(c(3,3.85)),1.1,paste("p=",round(nonsyn.wilcox.sig$p.value,9)),cex=1)
+dev.off()
+```
+
+![Editing level in synonymous and nonsynonymous editing sites by CO2 level of the experimental treatment. High CO2 treatments had significantly elevated editing levels in both synonymous and nonsynonymous edits.](high-low-sig.png)
+
+
+```{r}
+hist(edits.sig$per_hi[edits.sig$gdna_con=="A"&edits.sig$edited=="G"]-edits.sig$per_lo[edits.sig$gdna_con=="A"&edits.sig$edited=="G"],breaks=100,xlim=c(-1,1))
+abline(v=0,col="red")
+```
+
+
+```{r}
+lb=read.table("L-B.dat")
+lb$species=rep(c("Squid","Sepia","O_vulgaris","O_bimac","Nautilus","Sea hare"),12)
+lb$species=as.factor(lb$species)
+lb$edit=c(
+  rep("AC",6),
+  rep("AG",6),
+  rep("AT",6),
+  rep("CA",6),
+  rep("CG",6),
+  rep("CT",6),
+  rep("GA",6),
+  rep("GC",6),
+  rep("GT",6),
+  rep("TA",6),
+  rep("TC",6),
+  rep("TG",6)
+)
+colnames(lb)[1:2]=c("x","number")
+# Reorder the levels of the factor object
+desired_order <- c("Squid", "Sepia", "O_vulgaris", "O_bimac", "Nautilus", "Sea hare")
+lb$species <- factor(lb$species, levels = desired_order)
+
+lb$prop=lb$number/rep(aggregate(number~species,data=lb,FUN="sum")$number,12)
+
+barplot(lb$prop,col=c("blue","lightblue","green","orange","red","yellow"),space=c(0,rep(c(0,0,0,0,0,1),12)))
+```
+
+```{r}
+frac=matrix(numeric(),nrow=10,ncol=2)
+colnames(frac)=c("lo","hi")
+rownames(frac)=c("0-10","10-20","20-30","30-40","40-50","50-60","60-70","70-80","80-90","90-100")
+for (i in 1:10){
+  frac[i,1]=mean(edits$syn[edits$per_lo>((i-1)/10)&edits$per_lo<(i/10)&edits$gdna_con=="A"&edits$edited=="G"]=="nonsynonymous")
+  frac[i,2]=mean(edits$syn[edits$per_hi>((i-1)/10)&edits$per_hi<(i/10)&edits$gdna_con=="A"&edits$edited=="G"]=="nonsynonymous")
+}
+
+
+
+```
 
