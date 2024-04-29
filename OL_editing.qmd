@@ -744,15 +744,46 @@ lb$edit=c(
   rep("TC",6),
   rep("TG",6)
 )
-colnames(lb)[1:2]=c("x","number")
+colnames(lb)[1:2]=c("x","freq")
+
+lb=lb[,-1]
 # Reorder the levels of the factor object
 desired_order <- c("Squid", "Sepia", "O_vulgaris", "O_bimac", "Nautilus", "Sea hare")
 lb$species <- factor(lb$species, levels = desired_order)
 
-lb$prop=lb$number/rep(aggregate(number~species,data=lb,FUN="sum")$number,12)
+lb$prop=lb$freq/rep(aggregate(freq~species,data=lb,FUN="sum")$freq,12)
 
 barplot(lb$prop,col=c("blue","lightblue","green","orange","red","yellow"),space=c(0,rep(c(0,0,0,0,0,1),12)))
 ```
+
+[11:22 AM] Ricky Wright
+```{r}
+
+O_Rub_gill = read.csv("ruby.freq.csv", header = T)
+
+O_Rub_gill$species = "O_Rub_gill"
+
+O_Rub_gill$edit = paste(O_Rub_gill$gdna, O_Rub_gill$edited, sep = "")
+
+O_Rub_gill <- subset(O_Rub_gill, select = -c(gdna, edited))
+
+O_Rub_gill$prop <- O_Rub_gill$freq / sum(O_Rub_gill$freq)
+
+```
+ 
+```{r}
+
+all=rbind(lb,O_Rub_gill)
+all=all[order(all$edit),]
+desired_order <- c("O_Rub_gill", "Squid", "Sepia", "O_vulgaris", "O_bimac", "Nautilus", "Sea hare")
+all$species <- factor(all$species, levels = desired_order)
+
+
+
+barplot(all$prop,col=c("purple","blue","lightblue","green","orange","red","yellow"),space=c(0,rep(c(0,0,0,0,0,0,1),12)))
+
+```
+
 
 ```{r}
 frac=matrix(numeric(),nrow=10,ncol=2)
