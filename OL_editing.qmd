@@ -828,7 +828,7 @@ all$species <- factor(all$species, levels = desired_order)
 
 
 
-barplot(all$prop,col=c("purple","blue","lightblue","green","orange","red","yellow"),space=c(0,rep(c(0,0,0,0,0,0,1),12)))
+barplot(all$prop,col=c("#2a3188","#568ed2","#62c331","#f25031","#97191e","#efee0e","purple"),space=c(0,rep(c(0,0,0,0,0,0,1),12)))
 
 ```
 
