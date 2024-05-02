@@ -415,7 +415,7 @@ write.dna(ORF[gsub("(.*) ORF.*","\\1",labels(ORF)) %in% high.priority$orf],"high
 ```
 
 Now, using the blastn bash command to blast the fasta I just made.  
-```{bash}
+```{bash, eval=F}
 blastn -db nt -query high_priority.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_blast_results.txt -remote
 ```
 
@@ -463,25 +463,25 @@ write.csv(high.priority,"high_priority_blasted.csv",row.names = F)
 ```
 
 Now, using the blastn bash command to blast the fasta I just made.  
-```{bash}
-<!-- blastp -db pdb -query high_priority_aa2.fasta -outfmt '6 qseqid score bitscore length pident stitle' -entrez_query "mollusca[ORGN]" -max_target_seqs 5 -max_hsps 1 -out high_priority_aa_blast_results2.txt -remote -->
+```{bash, eval=F}
+blastp -db pdb -query high_priority_aa2.fasta -outfmt '6 qseqid score bitscore length pident stitle' -entrez_query "mollusca[ORGN]" -max_target_seqs 5 -max_hsps 1 -out high_priority_aa_blast_results2.txt -remote
 
-<!-- blastp -db pdb -query high_priority_aa2.fasta -out high_priority_aa_blast_results2.txt -remote -->
+blastp -db pdb -query high_priority_aa2.fasta -out high_priority_aa_blast_results2.txt -remote
 
 
 
-<!-- blastp -db nr -query high_priority_aa1.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results1.txt -remote -->
+blastp -db nr -query high_priority_aa1.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results1.txt -remote
 
-<!-- blastp -db nr -query high_priority_aa2.fasta -entrez_query "mollusca[ORGN]" -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results2.txt -remote -->
+blastp -db nr -query high_priority_aa2.fasta -entrez_query "mollusca[ORGN]" -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results2.txt -remote
 
-<!-- blastp -db nr -query high_priority_aa3.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results3.txt -remote -->
+blastp -db nr -query high_priority_aa3.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results3.txt -remote
 
 ```
 
 
 
 ```{bash}
-<!-- cat high_priority_aa2.fasta -->
+cat high_priority_aa2.fasta
 ```
 
 
