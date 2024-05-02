@@ -315,6 +315,14 @@ dev.off()
 ```
 ![Editing proportions.](editing proportions.svg )
 
+```{r}
+# Generate the dataframe with concatenated values
+ruby.nerve.freq <- aggregate(edits$pos ~ paste(edits$gdna_con, edits$edited, sep = ""), FUN = "length")
+colnames(ruby.nerve.freq) <- c("edit", "freq")
+ruby.nerve.freq$species = "O_Rub_nerve"
+ruby.nerve.freq$prop <- ruby.nerve.freq$freq / sum(ruby.nerve.freq$freq)
+```
+
 
 ```{r}
 edit.sig.per=table(edits.sig$gdna_con,edits.sig$edited)
@@ -324,6 +332,10 @@ names(edit.sig.bar)=c("A>C","A>G","A>T","C>A","C>G","C>T","G>A","G>C","G>T","T>A
 svg("editing proportions_sig.svg", width = 10, height = 5)
 barplot(edit.sig.bar)
 dev.off()
+```
+```{r}
+ruby.nerve.sig.freq=aggregate(edits$pos~edits$edited+edits$gdna_con,FUN="length")
+colnames(ruby.freq)=c("edited","gdna","freq")
 ```
 
 
@@ -807,7 +819,7 @@ barplot(lb$prop,col=c("blue","lightblue","green","orange","red","yellow"),space=
 [11:22 AM] Ricky Wright
 ```{r}
 
-O_Rub_gill = read.csv("ruby.freq.csv", header = T)
+O_Rub_gill = read.csv("ruby.gill.freq.csv", header = T)
 
 O_Rub_gill$species = "O_Rub_gill"
 
