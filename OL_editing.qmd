@@ -838,11 +838,13 @@ all=all[order(all$edit),]
 desired_order <- c("O_Rub_nerve", "O_Rub_gill", "Squid", "Sepia", "O_vulgaris", "O_bimac", "Nautilus", "Sea hare")
 all$species <- factor(all$species, levels = desired_order)
 
-
-
+svg("lb_all.svg")
+png("lb_all.png")
 barplot(all$prop,col=c("#2a3188","#568ed2","#62c331","#f25031","#97191e","#efee0e","purple", "black"),space=c(0,rep(c(0,0,0,0,0,0,0,1),12)))
+dev.off()
 
 ```
+![Editing proportions from all sources including LB, ruby gill, and ruby nerve](lb_all.png)
 
 
 ```{r}
