@@ -833,14 +833,14 @@ O_Rub_gill$prop <- O_Rub_gill$freq / sum(O_Rub_gill$freq)
  
 ```{r}
 
-all=rbind(lb,O_Rub_gill)
+all=rbind(lb, ruby.nerve.freq,O_Rub_gill)
 all=all[order(all$edit),]
-desired_order <- c("O_Rub_gill", "Squid", "Sepia", "O_vulgaris", "O_bimac", "Nautilus", "Sea hare")
+desired_order <- c("O_Rub_nerve", "O_Rub_gill", "Squid", "Sepia", "O_vulgaris", "O_bimac", "Nautilus", "Sea hare")
 all$species <- factor(all$species, levels = desired_order)
 
 
 
-barplot(all$prop,col=c("#2a3188","#568ed2","#62c331","#f25031","#97191e","#efee0e","purple"),space=c(0,rep(c(0,0,0,0,0,0,1),12)))
+barplot(all$prop,col=c("#2a3188","#568ed2","#62c331","#f25031","#97191e","#efee0e","purple", "black"),space=c(0,rep(c(0,0,0,0,0,0,0,1),12)))
 
 ```
 
