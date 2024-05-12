@@ -845,6 +845,24 @@ dev.off()
 
 ```
 ![Editing proportions from all sources including LB, ruby gill, and ruby nerve](lb_all.png)
+```{r}
+# Your original barplot code
+barplot(all$prop, 
+        col = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), 
+        space = c(0, rep(c(0, 0, 0, 0, 0, 0, 0, 1), 12)))
+
+# Calculate x-coordinates for labels
+bar_width <- 1  # Adjust this value if needed
+num_subgroups <- length(unique(all$edit))  # Number of unique entries under 'edit'
+num_groups <- length(unique(all$species))
+total_bars <- num_subgroups * num_groups
+group_positions <- seq(1, total_bars, by = num_groups) - 0.5
+label_positions <- group_positions + (num_subgroups - 1) / 2
+
+# Add labels below each subgroup
+axis(1, at = label_positions, labels = unique(all$edit))
+
+```
 
 
 ```{r}
