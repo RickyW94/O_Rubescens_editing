@@ -935,3 +935,176 @@ proportions_downstream_A_to_G_sig_df = data.frame(base = names(counts_downstream
 print(proportions_downstream_A_to_G_sig_df)
 ```
 
+Pulling from jaydee's 'global_changes.Rmd' to find editing levels between squid gill, squid neuron, ruby gill, and ruby neuron
+## Looking at editing level between synonymous and nonsynonymous
+
+```{r}
+squid.gill = read.csv("squid.gil.csv")
+squid.ner = read.csv("squid.ner.csv")
+octo.gill = read.csv("octo.gill.csv")
+```
+
+Adding columns to 'edits' to match columns in Jaydee's generated dataframes combined below
+```{r}
+edits.mat=edits[,spc:(spc+5)]
+edits$per_mean=apply(edits.mat,MARGIN = 1,FUN="mean")
+edits$per_hi=apply(edits[,spc:(spc+2)],MARGIN = 1,FUN="mean")
+edits$per_lo=apply(edits[,(spc+3):(spc+5)],MARGIN = 1,FUN="mean")
+```
+
+
+Create the dataset to plot
+```{r}
+boxy=data.frame(rbind(
+  cbind(rep("squid neuron",nrow(squid.ner[squid.ner$gdna_con=="A"&squid.ner$base_edited2=="G",])),
+        as.character(squid.ner$syn[squid.ner$gdna_con=="A"&squid.ner$base_edited2=="G"]),
+        squid.ner$per[squid.ner$gdna_con=="A"&squid.ner$base_edited2=="G"]),
+  cbind(rep("squid gill",nrow(squid.gill[squid.gill$gdna_con=="A"&squid.gill$base_edited2=="G",])),
+        as.character(squid.gill$syn[squid.gill$gdna_con=="A"&squid.gill$base_edited2=="G"]),
+        squid.gill$per[squid.gill$gdna_con=="A"&squid.gill$base_edited2=="G"]),
+  cbind(rep("octopus gill",nrow(octo.gill[octo.gill$gdna_con=="A"&octo.gill$edited=="G",])),
+        as.character(octo.gill$syn[octo.gill$gdna_con=="A"&octo.gill$edited=="G"]),
+        octo.gill$per_mean[octo.gill$gdna_con=="A"&octo.gill$edited=="G"]),
+  cbind(rep("octopus neuron",nrow(edits[edits$gdna_con=="A"&edits$edited=="G",])),
+        as.character(edits$syn[edits$gdna_con=="A"&edits$edited=="G"]),
+        edits$per_mean[edits$gdna_con=="A"&edits$edited=="G"])
+))
+colnames(boxy)=c("tissue","type","per")
+boxy$per=as.numeric(boxy$per)
+boxy$tissue=as.factor(boxy$tissue)
+boxy$type=as.factor(boxy$type)
+boxy$type=relevel(boxy$type,"synonymous")
+```
+
+Testing chunks from chatgpt
+```{r}
+# Assuming 'edits' has columns named 'gdna_con', 'edited', 'syn', and 'per_mean'
+boxy <- data.frame(rbind(
+  cbind(rep("squid neuron", nrow(squid.ner[squid.ner$gdna_con == "A" & squid.ner$base_edited2 == "G",])),
+        as.character(squid.ner$syn[squid.ner$gdna_con == "A" & squid.ner$base_edited2 == "G"]),
+        squid.ner$per[squid.ner$gdna_con == "A" & squid.ner$base_edited2 == "G"]),
+  cbind(rep("squid gill", nrow(squid.gill[squid.gill$gdna_con == "A" & squid.gill$base_edited2 == "G",])),
+        as.character(squid.gill$syn[squid.gill$gdna_con == "A" & squid.gill$base_edited2 == "G"]),
+        squid.gill$per[squid.gill$gdna_con == "A" & squid.gill$base_edited2 == "G"]),
+  cbind(rep("octopus gill", nrow(octo.gill[octo.gill$gdna_con == "A" & octo.gill$edited == "G",])),
+        as.character(octo.gill$syn[octo.gill$gdna_con == "A" & octo.gill$edited == "G"]),
+        octo.gill$per_mean[octo.gill$gdna_con == "A" & octo.gill$edited == "G"]),
+  cbind(rep("octopus neuron", nrow(edits[edits$gdna_con == "A" & edits$edited == "G",])),
+        as.character(edits$syn[edits$gdna_con == "A" & edits$edited == "G"]),
+        edits$per_mean[edits$gdna_con == "A" & edits$edited == "G"])
+))
+
+colnames(boxy) <- c("tissue", "type", "per")
+boxy$per <- as.numeric(boxy$per)
+boxy$tissue <- as.factor(boxy$tissue)
+boxy$type <- as.factor(boxy$type)
+boxy$type <- relevel(boxy$type, "synonymous")
+
+```
+
+```{r}
+# Set up the layout for the plots
+par(mfrow = c(2, 2))
+
+# Plot for octopus gill
+boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "octopus gill", ], range = 0, 
+        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(mean(c(1, 1.85)), -0.1, "octopus gill")
+lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
+text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
+
+# Plot for squid gill
+boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "squid gill", ], range = 0, 
+        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(mean(c(1, 1.85)), -0.1, "squid gill")
+lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
+text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
+
+# Plot for squid neuron
+boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "squid neuron", ], range = 0, 
+        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(mean(c(1, 1.85)), -0.1, "squid neuron")
+lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
+text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
+
+# Plot for octopus neuron
+boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "octopus neuron", ], range = 0, 
+        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(mean(c(1, 1.85)), -0.1, "octopus neuron")
+lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
+text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
+
+```
+
+```{r}
+# Set up the layout for the plots
+par(mfrow = c(2, 2))
+
+# Plot for octopus gill
+boxplot(per ~ type, data = subset(boxy, tissue == "octopus gill"), range = 0, 
+        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(1, -0.1, "octopus gill")
+lines(c(1, 1), c(0, 1.3), lwd = 2)
+text(1, 1.1, "*", cex = 2)
+
+# Plot for squid gill
+boxplot(per ~ type, data = subset(boxy, tissue == "squid gill"), range = 0, 
+        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(1, -0.1, "squid gill")
+lines(c(1, 1), c(0, 1.3), lwd = 2)
+text(1, 1.1, "*", cex = 2)
+
+# Plot for squid neuron
+boxplot(per ~ type, data = subset(boxy, tissue == "squid neuron"), range = 0, 
+        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(1, -0.1, "squid neuron")
+lines(c(1, 1), c(0, 1.3), lwd = 2)
+text(1, 1.1, "*", cex = 2)
+
+# Plot for octopus neuron
+boxplot(per ~ type, data = subset(boxy, tissue == "octopus neuron"), range = 0, 
+        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
+        col = c("white", "grey"))
+axis(2, at = seq(from = 0, to = 1, by = 0.2))
+text(1, -0.1, "octopus neuron")
+lines(c(1, 1), c(0, 1.3), lwd = 2)
+text(1, 1.1, "*", cex = 2)
+
+```
+
+
+This is Jaydee's original plot code. The problem is that he pulls exact values for means from each dataset and I'm not sure where he gets those. I can't simply add in my dataframe and make it work because it's not expandable...
+```{r message=FALSE, warning=FALSE}
+png("syn.png",width=7,height=4,units="in",res=300,pointsize=7)
+boxplot(per~type+tissue,data=boxy,range=0,at=c(1,1.85,3,3.85,5,5.85),
+        ylim=c(-0.1,1.3),axes=F,xlab="",ylab="Mismatch level",
+        col=c("white","grey"))
+axis(2,at=seq(from=0,to=1,by=0.2))
+text(mean(c(1,1.85)),-0.1,"octopus gill")
+text(mean(c(3,3.85)),-0.1,"squid gill")
+text(mean(c(5,5.85)),-0.1,"squid neuron")
+legend(x=0.5,y=1.3,pch=22,pt.cex=2.5,
+       legend=c("Synonymous","Nonsynonymous"),
+       pt.bg=c("white","grey"),bty="n")
+lines(c(1,1.85),c(1.05,1.05),lwd=2)
+text(mean(c(1,1.85)),1.1,"*",cex=2)
+lines(c(3,3.85),c(1.05,1.05),lwd=2)
+text(mean(c(3,3.85)),1.1,"*",cex=2)
+lines(c(5,5.85),c(1.05,1.05),lwd=2)
+text(mean(c(5,5.85)),1.1,"*",cex=2)
+dev.off()
+```
