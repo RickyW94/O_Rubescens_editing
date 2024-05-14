@@ -1088,6 +1088,20 @@ text(1, 1.1, "*", cex = 2)
 
 ```
 
+```{r}
+squish=0.85
+prim=seq(from=1,to=7,by=2)
+sec=prim+squish
+spacing=c(prim,sec)
+spacing=sort(spacing)
+boxplot(per~type+tissue,data=boxy,range=0,axes=F,xlab="",ylab="Mismatch level"
+       ,at=spacing,col=c("white","grey")
+         )
+axis(1,at=(prim+sec)/2,labels = c("octopus gill","octopus nervous","squid gill","squid nervous"),lwd=0)
+axis(2)
+```
+
+
 
 This is Jaydee's original plot code.
 ```{r message=FALSE, warning=FALSE}
