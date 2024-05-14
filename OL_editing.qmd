@@ -711,6 +711,8 @@ dev.off()
 ```
 ![Editing level in synonymous and nonsynonymous editing sites by CO2 level of the experimental treatment. High CO2 treatments had significantly elevated editing levels in both synonymous and nonsynonymous edits.](high-low.png)
 
+
+
 ```{r}
 hist(edits$per_hi[edits$gdna_con=="A"&edits$edited=="G"]-edits$per_lo[edits$gdna_con=="A"&edits$edited=="G"],breaks=100,)
 ```
@@ -1087,7 +1089,7 @@ text(1, 1.1, "*", cex = 2)
 ```
 
 
-This is Jaydee's original plot code. The problem is that he pulls exact values for means from each dataset and I'm not sure where he gets those. I can't simply add in my dataframe and make it work because it's not expandable...
+This is Jaydee's original plot code.
 ```{r message=FALSE, warning=FALSE}
 png("syn.png",width=7,height=4,units="in",res=300,pointsize=7)
 boxplot(per~type+tissue,data=boxy,range=0,at=c(1,1.85,3,3.85,5,5.85),
