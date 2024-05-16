@@ -1016,6 +1016,14 @@ edits$per_lo=apply(edits[,(spc+3):(spc+5)],MARGIN = 1,FUN="mean")
 ```
 
 
+```{r}
+wilcox.test(edits$per_mean[edits$gdna_con=="A"&edits$edited=="G"&edits$syn=="synonymous"],
+            edits$per_mean[edits$gdna_con=="A"&edits$edited=="G"&edits$syn=="nonsynonymous"],
+            alternative = "two.sided")
+```
+The above test has a p-value of 0.9755. Meaning the datasets of synonymous vs nonsynonymous A-to-G edits are not significantly different, which is not like all the other results on the plot. Meaning each set of boxes gets an asterisk except this pair, which is fine. I don't put a lot of stock in this particular analysis anyway.
+
+
 Create the dataset to plot
 ```{r}
 boxy=data.frame(rbind(
@@ -1039,135 +1047,73 @@ boxy$type=as.factor(boxy$type)
 boxy$type=relevel(boxy$type,"synonymous")
 ```
 
-Testing chunks from chatgpt
+
 ```{r}
-# Assuming 'edits' has columns named 'gdna_con', 'edited', 'syn', and 'per_mean'
-boxy <- data.frame(rbind(
-  cbind(rep("squid neuron", nrow(squid.ner[squid.ner$gdna_con == "A" & squid.ner$base_edited2 == "G",])),
-        as.character(squid.ner$syn[squid.ner$gdna_con == "A" & squid.ner$base_edited2 == "G"]),
-        squid.ner$per[squid.ner$gdna_con == "A" & squid.ner$base_edited2 == "G"]),
-  cbind(rep("squid gill", nrow(squid.gill[squid.gill$gdna_con == "A" & squid.gill$base_edited2 == "G",])),
-        as.character(squid.gill$syn[squid.gill$gdna_con == "A" & squid.gill$base_edited2 == "G"]),
-        squid.gill$per[squid.gill$gdna_con == "A" & squid.gill$base_edited2 == "G"]),
-  cbind(rep("octopus gill", nrow(octo.gill[octo.gill$gdna_con == "A" & octo.gill$edited == "G",])),
-        as.character(octo.gill$syn[octo.gill$gdna_con == "A" & octo.gill$edited == "G"]),
-        octo.gill$per_mean[octo.gill$gdna_con == "A" & octo.gill$edited == "G"]),
-  cbind(rep("octopus neuron", nrow(edits[edits$gdna_con == "A" & edits$edited == "G",])),
-        as.character(edits$syn[edits$gdna_con == "A" & edits$edited == "G"]),
-        edits$per_mean[edits$gdna_con == "A" & edits$edited == "G"])
+# Set up a larger plotting device and adjust margin parameters
+svg("syn.svg", width = 18, height = 10)
+
+# Adjust margin parameters
+par(mar = c(10, 10, 10, 10))
+
+ylim <- c(0, 1.6)
+
+# Your plotting code with adjusted font size (cex)
+squish <- 0.85
+prim <- seq(from = 1, to = 7, by = 2)
+sec <- prim + squish
+spacing <- c(prim, sec)
+spacing <- sort(spacing)
+boxplot(per ~ type + tissue, data = boxy, range = 0, axes = FALSE, xlab = "", ylab = "Mismatch level", cex.lab = 1.5,
+        at = spacing, col = c("white", "grey"))
+axis(1, at = (prim + sec)/2, labels = c("octopus gill", "octopus nervous", "squid gill", "squid nervous"), lwd = 0, cex.axis = 1.5)
+axis(2, at = seq(0, 1, by = 0.2), las = 1)
+legend("topright", legend = c("Synonymous", "Nonsynonymous"), fill = c("white", "grey"),
+       bty = "n", xpd = TRUE, xjust = 1, x.intersp = 0.5, inset = c(0, 0), x = 2.5, y = 1.4, cex = 1.5)
+
+# Define line coordinates
+line_x <- (prim + sec)/2  # Horizontal coordinates for the lines
+line_y <- 1.03  # Vertical coordinate for the lines
+
+# Expand the clipping region
+usr <- par("usr")
+usr[3] <- 0  # Set ymin to 0 to allow drawing above the plot area
+par(usr = usr)
+
+# Draw horizontal lines above each pair of boxplots
+for (x in line_x) {
+  lines(x = c(x - 0.5, x + 0.5), y = c(line_y, line_y), col = "black", lwd = 2)
+}
+
+# Close the plotting device
+dev.off()
+
+```
+
+Jaydee's original dataframe combine code. Changing 'boxy' to 'jboxy' and 'edits' to 'octo.gill' and 'squid.gil' to 'squid.gill'
+```{r}
+jboxy=data.frame(rbind(
+  cbind(rep("squid neuron",nrow(squid.ner[squid.ner$gdna_con=="A"&squid.ner$base_edited2=="G",])),
+        as.character(squid.ner$syn[squid.ner$gdna_con=="A"&squid.ner$base_edited2=="G"]),
+        squid.ner$per[squid.ner$gdna_con=="A"&squid.ner$base_edited2=="G"]),
+  cbind(rep("squid gill",nrow(squid.gill[squid.gill$gdna_con=="A"&squid.gill$base_edited2=="G",])),
+        as.character(squid.gill$syn[squid.gill$gdna_con=="A"&squid.gill$base_edited2=="G"]),
+        squid.gill$per[squid.gill$gdna_con=="A"&squid.gill$base_edited2=="G"]),
+  cbind(rep("octopus gill",nrow(octo.gill[octo.gill$gdna_con=="A"&octo.gill$edited=="G",])),
+        as.character(octo.gill$syn[octo.gill$gdna_con=="A"&octo.gill$edited=="G"]),
+        octo.gill$per_mean[octo.gill$gdna_con=="A"&octo.gill$edited=="G"])
 ))
-
-colnames(boxy) <- c("tissue", "type", "per")
-boxy$per <- as.numeric(boxy$per)
-boxy$tissue <- as.factor(boxy$tissue)
-boxy$type <- as.factor(boxy$type)
-boxy$type <- relevel(boxy$type, "synonymous")
-
+colnames(jboxy)=c("tissue","type","per")
+jboxy$per=as.numeric(jboxy$per)
+jboxy$tissue=as.factor(jboxy$tissue)
+jboxy$type=as.factor(jboxy$type)
+jboxy$type=relevel(jboxy$type,"synonymous")
 ```
-
-```{r}
-# Set up the layout for the plots
-par(mfrow = c(2, 2))
-
-# Plot for octopus gill
-boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "octopus gill", ], range = 0, 
-        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(mean(c(1, 1.85)), -0.1, "octopus gill")
-lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
-text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
-
-# Plot for squid gill
-boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "squid gill", ], range = 0, 
-        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(mean(c(1, 1.85)), -0.1, "squid gill")
-lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
-text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
-
-# Plot for squid neuron
-boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "squid neuron", ], range = 0, 
-        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(mean(c(1, 1.85)), -0.1, "squid neuron")
-lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
-text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
-
-# Plot for octopus neuron
-boxplot(per ~ type + tissue, data = boxy[boxy$tissue == "octopus neuron", ], range = 0, 
-        at = c(1, 1.85), ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(mean(c(1, 1.85)), -0.1, "octopus neuron")
-lines(c(1, 1.85), c(1.05, 1.05), lwd = 2)
-text(mean(c(1, 1.85)), 1.1, "*", cex = 2)
-
-```
-
-```{r}
-# Set up the layout for the plots
-par(mfrow = c(2, 2))
-
-# Plot for octopus gill
-boxplot(per ~ type, data = subset(boxy, tissue == "octopus gill"), range = 0, 
-        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(1, -0.1, "octopus gill")
-lines(c(1, 1), c(0, 1.3), lwd = 2)
-text(1, 1.1, "*", cex = 2)
-
-# Plot for squid gill
-boxplot(per ~ type, data = subset(boxy, tissue == "squid gill"), range = 0, 
-        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(1, -0.1, "squid gill")
-lines(c(1, 1), c(0, 1.3), lwd = 2)
-text(1, 1.1, "*", cex = 2)
-
-# Plot for squid neuron
-boxplot(per ~ type, data = subset(boxy, tissue == "squid neuron"), range = 0, 
-        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(1, -0.1, "squid neuron")
-lines(c(1, 1), c(0, 1.3), lwd = 2)
-text(1, 1.1, "*", cex = 2)
-
-# Plot for octopus neuron
-boxplot(per ~ type, data = subset(boxy, tissue == "octopus neuron"), range = 0, 
-        ylim = c(-0.1, 1.3), axes = FALSE, xlab = "", ylab = "Mismatch level", 
-        col = c("white", "grey"))
-axis(2, at = seq(from = 0, to = 1, by = 0.2))
-text(1, -0.1, "octopus neuron")
-lines(c(1, 1), c(0, 1.3), lwd = 2)
-text(1, 1.1, "*", cex = 2)
-
-```
-
-```{r}
-squish=0.85
-prim=seq(from=1,to=7,by=2)
-sec=prim+squish
-spacing=c(prim,sec)
-spacing=sort(spacing)
-boxplot(per~type+tissue,data=boxy,range=0,axes=F,xlab="",ylab="Mismatch level"
-       ,at=spacing,col=c("white","grey")
-         )
-axis(1,at=(prim+sec)/2,labels = c("octopus gill","octopus nervous","squid gill","squid nervous"),lwd=0)
-axis(2)
-```
-
 
 
 This is Jaydee's original plot code.
 ```{r message=FALSE, warning=FALSE}
-png("syn.png",width=7,height=4,units="in",res=300,pointsize=7)
-boxplot(per~type+tissue,data=boxy,range=0,at=c(1,1.85,3,3.85,5,5.85),
+png("j_syn.png",width=7,height=4,units="in",res=300,pointsize=7)
+boxplot(per~type+tissue,data=jboxy,range=0,at=c(1,1.85,3,3.85,5,5.85),
         ylim=c(-0.1,1.3),axes=F,xlab="",ylab="Mismatch level",
         col=c("white","grey"))
 axis(2,at=seq(from=0,to=1,by=0.2))
