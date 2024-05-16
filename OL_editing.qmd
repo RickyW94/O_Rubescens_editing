@@ -783,8 +783,69 @@ dev.off()
 
 
 ```{r}
-hist(edits.sig$per_hi[edits.sig$gdna_con=="A"&edits.sig$edited=="G"]-edits.sig$per_lo[edits.sig$gdna_con=="A"&edits.sig$edited=="G"],breaks=100,xlim=c(-1,1))
+hist(
+  edits.sig$per_hi[edits.sig$gdna_con=="A"&edits.sig$edited=="G"]-
+  edits.sig$per_lo[edits.sig$gdna_con=="A"&edits.sig$edited=="G"]
+  ,breaks=100
+  ,xlim=c(-1,1)
+  ,main=""
+  ,xlab=expression(Delta * " % editing")
+  ,ylab="# of editing sites"
+     )
 abline(v=0,col="red")
+```
+
+
+```{r}
+# Calculate the differences
+differences <- edits.sig$per_hi[edits.sig$gdna_con=="A"&edits.sig$edited=="G"] -
+               edits.sig$per_lo[edits.sig$gdna_con=="A"&edits.sig$edited=="G"]
+
+# Create the histogram object
+hist_data <- hist(differences, breaks=100, plot=FALSE)
+
+# Define the color palette from green to grey to orange
+colors <- colorRampPalette(c("green", "grey", "orange"))(length(hist_data$mids))
+
+# Plot the histogram with custom colors
+plot(hist_data, col=colors, xlim=c(-1, 1), main="", xlab=expression(Delta * " % editing"), ylab="# of editing sites", border=NA)
+
+# Add a vertical line at x=0
+abline(v=0, col="red")
+
+```
+
+```{r}
+# Calculate the differences
+differences <- edits.sig$per_hi[edits.sig$gdna_con=="A" & edits.sig$edited=="G"] -
+               edits.sig$per_lo[edits.sig$gdna_con=="A" & edits.sig$edited=="G"]
+
+# Create the histogram object
+hist_data <- hist(differences, breaks=100, plot=FALSE)
+
+# Calculate the distances of midpoints from 0
+distances <- hist_data$mids
+
+# Define the color palettes
+neg_colors <- colorRampPalette(c("grey","#169708ff", "#169708ff"))(50)
+pos_colors <- colorRampPalette(c("grey", "#d57b00ff","#d57b00ff"))(50)
+
+# Assign colors based on the distance from 0
+bar_colors <- sapply(distances, function(d) {
+  if (d < 0) {
+    neg_colors[as.integer((abs(d) / max(abs(distances[distances < 0]))) * 49) + 1]
+  } else {
+    pos_colors[as.integer((d / max(distances[distances > 0])) * 49) + 1]
+  }
+})
+
+# Plot the histogram with custom colors and no border
+plot(hist_data, col=bar_colors, border=NA, xlim=c(-1, 1), main="", xlab=expression(Delta * " % editing"), ylab="# of editing sites")
+
+# Add a vertical line at x=0
+abline(v=0, col="darkred")
+
+
 ```
 
 
