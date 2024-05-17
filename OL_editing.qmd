@@ -820,6 +820,7 @@ abline(v=0, col="red")
 differences <- edits.sig$per_hi[edits.sig$gdna_con=="A" & edits.sig$edited=="G"] -
                edits.sig$per_lo[edits.sig$gdna_con=="A" & edits.sig$edited=="G"]
 
+svg("hist_data_sig_suppression.svg")
 # Create the histogram object
 hist_data <- hist(differences, breaks=100, plot=FALSE)
 
@@ -845,6 +846,7 @@ plot(hist_data, col=bar_colors, border=NA, xlim=c(-1, 1), main="", xlab=expressi
 # Add a vertical line at x=0
 abline(v=0, col="darkred")
 
+dev.off()
 
 ```
 
