@@ -935,9 +935,6 @@ dev.off()
 ```
 
 
-
-
-
 ```{r}
 frac=matrix(numeric(),nrow=10,ncol=2)
 colnames(frac)=c("lo","hi")
