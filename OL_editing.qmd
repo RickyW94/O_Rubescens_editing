@@ -914,6 +914,7 @@ dev.off()
 ```
 ![Editing proportions from all sources including LB, ruby gill, and ruby nerve](lb_all.png)
 ```{r}
+svg("all_edit_types.svg")
 giveme.bar=barplot(all$prop, 
         col = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), 
         space = c(0, rep(c(0, 0, 0, 0, 0, 0, 0, 1), 11),c(0, 0, 0, 0, 0, 0, 0)),
@@ -930,130 +931,10 @@ axis(1, at = tic, labels = unique(all$edit),lwd=0,line=-1)
 
 legend("topright", legend = unique(all$species), fill = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), bty = "n")
 
-
-
-```
-
-```{r}
-png("all.png", units = "px", width = 800, height = 600)
-barplot(all$prop, 
-        col = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), 
-        space = c(0, rep(c(0, 0, 0, 0, 0, 0, 0, 1), 12)))
-
-# Calculate x-coordinates for labels
-bar_width <- 1  # Adjust this value if needed
-num_subgroups <- length(unique(all$edit))  # Number of unique entries under 'edit'
-num_groups <- length(unique(all$species))
-total_bars <- num_subgroups * num_groups
-group_positions <- seq(1, total_bars, by = num_groups) - 0.5
-label_positions <- group_positions + (num_subgroups - 1) / 2
-
-# Add labels below each subgroup
-axis(1, at = label_positions, labels = unique(all$edit))
 dev.off()
 ```
-```{r}
-# Create the bar plot
-barplot(all$prop,
-        col = rep(c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), times = length(unique(all$edit))),
-        space = c(0, rep(c(0, 0, 0, 0, 0, 0, 0, 1), length(unique(all$edit)))),
-        border = NA, # No border for bars
-        axes = FALSE) # Disable default axes
-
-# Calculate x-coordinates for labels
-num_subgroups <- length(unique(all$species))  # Number of unique entries under 'species'
-num_groups <- length(unique(all$edit))
-total_bars <- nrow(all)
-group_positions <- seq(num_subgroups / 2, total_bars, by = num_subgroups)
-label_positions <- group_positions + (num_subgroups - 1) / 2
-
-# Add labels below each group of edits
-axis(1, at = label_positions, labels = unique(all$edit), tick = FALSE, line = 1)
-
-# Add short downward lines to delineate groups
-for (pos in group_positions) {
-  lines(x = c(pos - (num_subgroups / 2), pos - (num_subgroups / 2)), y = c(-0.02, -0.04), xpd = TRUE)
-  lines(x = c(pos + (num_subgroups / 2) - 1, pos + (num_subgroups / 2) - 1), y = c(-0.02, -0.04), xpd = TRUE)
-}
-
-# Add a legend to label the colors
-legend("topright", legend = unique(all$species), fill = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), bty = "n")
-
-```
-```{r}
-png("lb_test.png", units = "px", width = 800, height = 600)
-# Create the bar plot
-barplot(all$prop,
-        col = rep(c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), times = length(unique(all$edit))),
-        space = c(0, rep(c(rep(0, length(unique(all$species)) - 1), 1), length(unique(all$edit)))),
-        border = NA, # No border for bars
-        axes = FALSE) # Disable default axes
-
-# Calculate x-coordinates for labels and tick marks
-num_subgroups <- length(unique(all$species))  # Number of unique entries under 'species'
-num_groups <- length(unique(all$edit))
-total_bars <- num_subgroups * num_groups
-midpoints <- (1:num_groups) * (num_subgroups + 1) - (num_subgroups + 1) / 2
-
-# Add one additional midpoint after the final group
-midpoints <- c(midpoints, max(midpoints) + num_subgroups)
-
-# Define scaling and offset factors
-scale_factor <- 1.7  # Adjust this value to scale the spacing of the ticks and labels
-x_offset <- -0.805 * num_subgroups  # Adjust this value to horizontally offset the ticks and labels
-
-# Apply scaling and offset to midpoints
-midpoints <- midpoints * scale_factor + x_offset
-
-# Add horizontal line for x-axis
-abline(h = 0, lwd = 2)
-
-# Add axis tick marks at adjusted positions
-axis(1, at = midpoints, labels = rep("", length(midpoints)), tick = TRUE, tcl = -0.5)
-
-# Manually add labels for each group of bars
-edit_labels <- unique(all$edit)
-for (i in 1:num_groups) {
-  text(midpoints[i], -0.1, labels = edit_labels[i], adj = 0.5)
-}
-
-# Add a legend to label the colors
-legend("topright", legend = unique(all$species), fill = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), bty = "n")
-
-dev.off()
-```
-```{r}
-# Create the bar plot
-barplot(all$prop,
-        col = rep(c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black"), times = length(unique(all$edit))),
-        space = c(0, rep(c(rep(0, length(unique(all$species)) - 1), 1), length(unique(all$edit)))),
-        border = NA, # No border for bars
-        axes = FALSE) # Disable default axes
-
-# Calculate x-coordinates for labels and tick marks
-num_subgroups <- length(unique(all$species))  # Number of unique entries under 'species'
-num_groups <- length(unique(all$edit))
-total_bars <- num_subgroups * num_groups
-group_positions <- seq(1, total_bars, by = num_subgroups)
-midpoints <- (1:(num_groups - 1)) * num_subgroups + 0.5 * num_subgroups
 
 
-# Print midpoints for diagnostic
-print(midpoints)
-
-# Add horizontal line for x-axis
-abline(h = 0, lwd = 2)
-
-# Add axis tick marks at adjusted positions
-axis(1, at = midpoints, labels = rep("", length(midpoints)), tick = TRUE, tcl = -0.5)
-
-# Manually add labels for each group of bars
-edit_labels <- unique(all$edit)
-for (i in 1:num_groups) {
-  text(midpoints[i], -0.1, labels = edit_labels[i], adj = 0.5)
-}
-
-```
 
 
 
