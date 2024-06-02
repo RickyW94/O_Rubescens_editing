@@ -47,3 +47,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Exclude unzipped rubescens transcriptome
+rubescens_transcriptome_ORF_ignore_nested.fasta
