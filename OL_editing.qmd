@@ -1139,3 +1139,19 @@ lines(c(5,5.85),c(1.05,1.05),lwd=2)
 text(mean(c(5,5.85)),1.1,"*",cex=2)
 dev.off()
 ```
+
+Making single plot of A-to-G edits across species for presentation
+```{r}
+library(dplyr)
+only_ag <- all %>% filter(edit == 'AG')
+
+svg("only_ag.svg", width = 12, height = 7)
+barplot(height = only_ag$freq,
+        names.arg = only_ag$species,
+        ylab = "A-to-G edits",
+        ylim = c(0,150000),
+        col = c("#2a3188", "#568ed2", "#62c331", "#f25031", "#97191e", "#efee0e", "purple", "black")
+        )
+dev.off()
+```
+
