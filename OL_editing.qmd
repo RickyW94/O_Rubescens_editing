@@ -313,7 +313,7 @@ svg("editing proportions.svg", width = 10, height = 5)
 barplot(edit.bar)
 dev.off()
 ```
-![Editing proportions.](editing proportions.svg )
+![Editing proportions.](editing proportions.svg)
 
 ```{r}
 # Generate the dataframe with concatenated values
@@ -416,15 +416,27 @@ sum(edits$padj<0.1&edits$gdna_con=="A"&edits$edited=="G",na.rm = T)
 # Blasting high priority sequences again
 
 ```{r}
-ORF=read.FASTA("rubescens_transcriptome_ORF_ignore_nested.fasta",type="DNA")
+#ORF=read.FASTA("rubescens_transcriptome_ORF_ignore_nested.fasta",type="DNA")
 ```
 
 Making a fasta file with only the ORFs containing high priority edits
+First, I unzip the zip file that has the large fasta file in it
+```{bash}
+unzip rubescens_transcriptome_ORF_ignore_nested.zip
+```
+
+then read it into R and make a new fasta that only has the high priority edits
 ```{r}
 ORF=read.dna('rubescens_transcriptome_ORF_ignore_nested.fasta', format='fasta')
 write.dna(ORF[gsub("(.*) ORF.*","\\1",labels(ORF)) %in% high.priority$orf],"high_priority.fasta",format="fasta",colsep="")
 
 ```
+
+Then I remove the large fasta.
+```{bash}
+rm rubescens_transcriptome_ORF_ignore_nested.fasta
+```
+
 
 Now, using the blastn bash command to blast the fasta I just made.  
 ```{bash, eval=F}
@@ -476,24 +488,24 @@ write.csv(high.priority,"high_priority_blasted.csv",row.names = F)
 
 Now, using the blastn bash command to blast the fasta I just made.  
 ```{bash, eval=F}
-blastp -db pdb -query high_priority_aa2.fasta -outfmt '6 qseqid score bitscore length pident stitle' -entrez_query "mollusca[ORGN]" -max_target_seqs 5 -max_hsps 1 -out high_priority_aa_blast_results2.txt -remote
+#blastp -db pdb -query high_priority_aa2.fasta -outfmt '6 qseqid score bitscore length pident stitle' -entrez_query "mollusca[ORGN]" -max_target_seqs 5 #-max_hsps 1 -out high_priority_aa_blast_results2.txt -remote
 
-blastp -db pdb -query high_priority_aa2.fasta -out high_priority_aa_blast_results2.txt -remote
+#blastp -db pdb -query high_priority_aa2.fasta -out high_priority_aa_blast_results2.txt -remote
 
 
 
-blastp -db nr -query high_priority_aa1.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results1.txt -remote
+#blastp -db nr -query high_priority_aa1.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out #high_priority_aa_blast_results1.txt -remote
 
-blastp -db nr -query high_priority_aa2.fasta -entrez_query "mollusca[ORGN]" -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results2.txt -remote
+#blastp -db nr -query high_priority_aa2.fasta -entrez_query "mollusca[ORGN]" -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out #high_priority_aa_blast_results2.txt -remote
 
-blastp -db nr -query high_priority_aa3.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out high_priority_aa_blast_results3.txt -remote
+#blastp -db nr -query high_priority_aa3.fasta -outfmt '6 qseqid score bitscore length pident stitle' -max_target_seqs 5 -out #high_priority_aa_blast_results3.txt -remote
 
 ```
 
 
 
 ```{bash}
-cat high_priority_aa2.fasta
+#cat high_priority_aa2.fasta
 ```
 
 
