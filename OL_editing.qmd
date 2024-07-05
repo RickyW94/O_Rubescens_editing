@@ -18,7 +18,7 @@ output:
 ```
 
 
-```{r}
+```{r loading libraries}
 library(UniprotR)
 library(xlsx)
 library(ape)
@@ -27,19 +27,23 @@ library(insect)
 ```
 
 
-
+# Preparing in editing data
+## Reading in Data
+This is the output of the pipeline developed by Jaydee Sereewit. This was loosely based on the Alon et al. methods.
 ```{r}
 ses=read.csv("ses_profile.csv")
 wes=read.csv("wes_profile.csv")
 ```
 
+
+Now I combine the weak and strong editing sites
 ```{r}
 edits.raw=rbind(ses,wes)
 
 ```
 
 
-
+And then give new column names to make the rest of this easier
 ```{r}
 colnames(edits.raw)[1:35]=c("orf","pos","mrna_con","gdna_reads","gdna_con","octo10_A","octo10_C","octo10_G","octo10_T","octo10_tot",
                   "octo4_A","octo4_C","octo4_G","octo4_T","octo4_tot","octo6_A","octo6_C","octo6_G","octo6_T","octo6_tot",
@@ -56,7 +60,7 @@ edits=edits.raw[edits.raw$octo10_tot>0&edits.raw$octo4_tot>0&edits.raw$octo6_tot
 
 
 
-# Finding the actual edited base
+## Finding the actual edited base
 None of the fields that are currently in the dataset actually give what the base edited to for the weak editing sites.  For the strong edits you can gather this data from the mrna_cons field, but for the weak edits this field will match the gdna_cons field and not represent what the base was changed to.  This bit of code is intended to give what is the most common mRNA base that does not match the gDNA.
 ```{r}
 ## Making field for edited based ####
@@ -185,7 +189,7 @@ hist(tstat.shuf[tstat.shuf<5],breaks=100)
 ```
 
 Finally, we compare the actual t-stats form the data to the randomization t-stat bank to find how many are more extreme the the actual t-stats, and that is the p-value.
-```{r Finding t-stats}
+```{r Finding t-stats, eval=F}
 edits$pval=0
 
 for (i in 1:nrow(edits)){
@@ -197,20 +201,20 @@ for (i in 1:nrow(edits)){
 
 We now have a huge pile of p-values, and suffer from ~330k multiple comparisons.  
 To solve this we can apply a Benjamini & Hochberg false discovery rate correction to the p-values. 
-```{r False discovery rate}
+```{r False discovery rate, eval=F}
 edits$padj=p.adjust(edits$pval,method="BH")
 edits$pval[is.nan(edits$tstat)]=NA
 edits$padj[is.nan(edits$tstat)]=NA
 ```
 
 
-```{r}
+```{r, eval=F}
 edits.sig=edits[which(!edits$tstat==Inf),]
 edits.sig=edits.sig[edits.sig$padj<=0.01,]
 ```
 
 Getting swissprot accession numbers for the transcripts
-```{r}
+```{r, eval=F}
 swiss=read.table("rubescens_transcriptome_ORF_swissprot_blastx_1bestalignment.csv",header=F)
 colnames(swiss)=c("orf","acc","sumfin_else","i_dont_care","another_thing")
 edits.sig$acc=NA
@@ -223,7 +227,7 @@ for (i in 1:nrow(edits.sig)){
 ```
 
 Getting names of swissprot ORFs
-```{r}
+```{r, eval=F}
 
 edits.sig$protein_name=NA
 
@@ -247,11 +251,16 @@ for (i in 1:length(accessions)){
 ```
 
 
-```{r}
+```{r, eval=F}
 for (i in 1:nrow(edits.sig)){
   edits.sig$protein_name[i]=proteins[accessions==edits.sig$acc[i]]
 }
 ```
+
+```{r}
+
+```
+
 
 
 Ok, lets see how many significant edits there are at a false discovery rate of 10% or less:
@@ -305,8 +314,6 @@ write.csv(
 )
 
 ```
-
-
 
 
 # Editing proportions
@@ -427,19 +434,19 @@ sum(edits$padj<0.1&edits$gdna_con=="A"&edits$edited=="G",na.rm = T)
 
 Making a fasta file with only the ORFs containing high priority edits
 First, I unzip the zip file that has the large fasta file in it
-```{bash}
+```{bash, eval=F}
 unzip rubescens_transcriptome_ORF_ignore_nested.zip
 ```
 
 then read it into R and make a new fasta that only has the high priority edits
-```{r}
+```{r, eval=F}
 ORF=read.dna('rubescens_transcriptome_ORF_ignore_nested.fasta', format='fasta')
 write.dna(ORF[gsub("(.*) ORF.*","\\1",labels(ORF)) %in% high.priority$orf],"high_priority.fasta",format="fasta",colsep="")
 
 ```
 
 Then I remove the large fasta.
-```{bash}
+```{bash, eval=F}
 rm rubescens_transcriptome_ORF_ignore_nested.fasta
 ```
 
@@ -859,10 +866,13 @@ bar_colors <- sapply(distances, function(d) {
 })
 
 # Plot the histogram with custom colors and no border
-plot(hist_data, col=bar_colors, border=NA, xlim=c(-1, 1), main="", xlab=expression(Delta * " % editing"), ylab="# of editing sites")
+plot(hist_data, col=bar_colors, border=NA, xlim=c(-1, 1), main="", xlab=expression(Delta * " proportion editing"), ylab="# of editing sites")
 
 # Add a vertical line at x=0
 abline(v=0, col="darkred")
+text(0.5,600,expression("High CO"[2]*" induced"),col="#d57b00ff")
+text(-0.5,600,expression("Low CO"[2]*" induced"),col="#169708ff")
+
 
 dev.off()
 
